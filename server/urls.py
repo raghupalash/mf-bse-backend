@@ -1,7 +1,5 @@
 from django.urls import path
 
-from .views import hello_world
+from .views import GenerateOTPView
 
-urlpatterns = [
-    path("", hello_world, name="home"),
-]
+urlpatterns = [path("generate_otp", GenerateOTPView.as_view(), name="generate_otp")]

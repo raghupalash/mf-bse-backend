@@ -10,7 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path(".") / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +36,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "server",
+    "anymail",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -121,3 +128,14 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+EMAIL_BACKEND = "anymail.backends.mandrill.EmailBackend"
+DEFAULT_FROM_EMAIL = "palash@sbnri.com"
+
+ANYMAIL = {
+    "MANDRILL_API_KEY": os.getenv("MANDRILL_API_KEY"),
+    "MANDRILL_API_URL": "https://mandrillapp.com/api/1.0/",
+}
+
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587

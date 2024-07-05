@@ -39,8 +39,7 @@ class GenerateOTPView(APIView):
             [email],
             fail_silently=False,
         )
-
-        return Response({"data": "OTP sent to mail!"})
+        return Response(dict(status=1, data=data))
 
 
 class VerifyOTPView(APIView):
@@ -66,4 +65,4 @@ class VerifyOTPView(APIView):
         else:
             link = generate_firebase_link_for_auth(email=email)
 
-        return Response(dict(data=link))
+        return Response(dict(status=1, data=link))

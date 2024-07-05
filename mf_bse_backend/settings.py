@@ -44,17 +44,34 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CORS_ORIGIN_WHITELIST = (
+    'http://127.0.0.1',
+    'http://localhost',
+    'http://127.0.0.1:3000',
+    'http://localhost:3000',
+    'http://3.110.108.71:3000',
+    'https://sbnri.com',
+    'https://test.sbnri.com',
+    'https://www.sbnri.com',
+    'https://www.test.sbnri.com',
+)
+
+CORS_ALLOW_HEADERS=['accept', 'accept-encoding', 'authorization', 'content-type', 'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with', 'x-username', 'x-device', 'x-version']
+
 
 ROOT_URLCONF = "mf_bse_backend.urls"
 

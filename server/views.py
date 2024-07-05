@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from .helpers import random_num_with_N_digits
 from .models import UserOTP
+from .firebase import generate_firebase_link_for_auth
 
 
 class GenerateOTPView(APIView):
@@ -40,3 +41,29 @@ class GenerateOTPView(APIView):
         )
 
         return Response({"data": "OTP sent to mail!"})
+
+
+class VerifyOTPView(APIView):
+    def post(self, request):
+        email = request.data.get("email", None)
+        otp = request.data.get("otp", None)
+        if not email:
+            return Response("Email is required!", 400)
+        if not otp:
+            return Response("OTP is required!", 400)
+
+        # validate email
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(dict(data="Enter valid email!"), 400)
+
+        user_otp = UserOTP.objects.filter(email=email).first()
+        if not user_otp:
+            return Response(dict(data="OTP not generated"), 400)
+        elif user_otp.otp_code != otp:
+            return Response(dict(data="OTP is incorrect. Please try again"), 400)
+        else:
+            link = generate_firebase_link_for_auth(email=email)
+
+        return Response(dict(data=link))

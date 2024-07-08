@@ -38,6 +38,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "server",
     "anymail",
+    "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -170,3 +171,14 @@ FIREBASE_CONFIG = {
 
 DEEP_LINK_APP_URL = os.getenv("DEEP_LINK_APP_URL")
 DEEP_LINK_DOMAIN = os.getenv("DEEP_LINK_DOMAIN")
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'server.authentication.BearerTokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+AUTH_USER_MODEL = 'server.User'

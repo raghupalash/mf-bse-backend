@@ -1,4 +1,5 @@
 from random import randint
+import time
 
 
 def random_num_with_N_digits(n):

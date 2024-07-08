@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .helpers import random_num_with_N_digits
+from .helpers import random_num_with_N_digits, create_username
 from .models import UserOTP, User, UserLoginToken
 from .firebase import generate_firebase_link_for_auth, get_credentails_from_id_token
 
@@ -44,7 +44,8 @@ class GenerateOTPView(APIView):
             fail_silently=False,
         )
 
-        return Response({"status":1, "data": "OTP sent to mail!"})
+        return Response({"status": 1, "data": "OTP sent to mail!"})
+
 
 class VerifyOTPView(APIView):
     authentication_classes = []  # Disable authentication
@@ -68,36 +69,43 @@ class VerifyOTPView(APIView):
         if not user_otp:
             return Response(dict(status=0, data="OTP not generated"), 400)
         elif user_otp.otp_code != otp:
-            return Response(dict(status=0, data="OTP is incorrect. Please try again"), 400)
+            return Response(
+                dict(status=0, data="OTP is incorrect. Please try again"), 400
+            )
         else:
             link = generate_firebase_link_for_auth(email=email)
 
         return Response(dict(status=1, data=link))
-    
+
+
 class VerifyTokenView(APIView):
     authentication_classes = []  # Disable authentication
     permission_classes = [AllowAny]  # Allow access to all
 
     def post(self, request):
-        token = request.data.get('token', None)
+        token = request.data.get("token", None)
         if not token:
             return Response(dict(status=0, data="Email is required!"), 400)
         token_credentials = get_credentails_from_id_token(token)
-        
+
         if not token_credentials:
             raise Response(dict(status=0, data="Token expired!"), 400)
 
-        firebase_user_id = token_credentials['firebase_user_id']
-        photo_url = token_credentials['photo_url']
-        email = token_credentials['email']
+        firebase_user_id = token_credentials["firebase_user_id"]
+        photo_url = token_credentials["photo_url"]
+        email = token_credentials["email"]
+        first_name = token_credentials["first_name"]
+        last_name = token_credentials["last_name"]
 
-        user_instance, created = User.objects.get_or_create(firebase_user_id=firebase_user_id)
+        user_instance, created = User.objects.get_or_create(
+            firebase_user_id=firebase_user_id
+        )
 
         if created:
+            user_instance.username = create_username()
             user_instance.email = email
-            user_instance.first_name = user_instance.firstname = token_credentials['first_name']
-            user_instance.last_name = user_instance.lastname = token_credentials['last_name']
-            user_instance.additional_email = token_credentials['additional_email']
+            user_instance.first_name = first_name
+            user_instance.last_name = last_name
             user_instance.photo_url = photo_url
             user_instance.is_email_verified = token_credentials["email_verified"]
 
@@ -112,14 +120,16 @@ class VerifyTokenView(APIView):
 
         user_data = {
             "firebase_user_id": user_instance.firebase_user_id,
+            "username": user_instance.username,
             "email": user_instance.email,
             "first_name": user_instance.first_name,
             "last_name": user_instance.last_name,
             "photo_url": user_instance.photo_url,
-            "token": token_instance.key
+            "token": token_instance.key,
         }
         return Response(dict(status=1, data=user_data))
-    
+
+
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -130,7 +140,7 @@ class ProfileView(APIView):
             "email": user_instance.email,
             "first_name": user_instance.first_name,
             "last_name": user_instance.last_name,
-            "photo_url": user_instance.photo_url
+            "photo_url": user_instance.photo_url,
         }
 
         return Response(dict(status=1, data=user_data))

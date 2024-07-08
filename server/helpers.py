@@ -9,3 +9,11 @@ def random_num_with_N_digits(n):
     range_start = 10 ** (n - 1)
     range_end = (10**n) - 1
     return randint(range_start, range_end)
+
+
+def create_username():
+    import time
+
+    username = str(random_num_with_N_digits(6)) + str(time.time())[:4]
+
+    return username

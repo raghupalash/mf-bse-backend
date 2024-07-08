@@ -60,18 +60,31 @@ MIDDLEWARE = [
 ]
 
 CORS_ORIGIN_WHITELIST = (
-    'http://127.0.0.1',
-    'http://localhost',
-    'http://127.0.0.1:3000',
-    'http://localhost:3000',
-    'http://3.110.108.71:3000',
-    'https://sbnri.com',
-    'https://test.sbnri.com',
-    'https://www.sbnri.com',
-    'https://www.test.sbnri.com',
+    "http://127.0.0.1",
+    "http://localhost",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://3.110.108.71:3000",
+    "https://sbnri.com",
+    "https://test.sbnri.com",
+    "https://www.sbnri.com",
+    "https://www.test.sbnri.com",
 )
 
-CORS_ALLOW_HEADERS=['accept', 'accept-encoding', 'authorization', 'content-type', 'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with', 'x-username', 'x-device', 'x-version']
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "x-username",
+    "x-device",
+    "x-version",
+]
 
 
 ROOT_URLCONF = "mf_bse_backend.urls"
@@ -173,12 +186,12 @@ DEEP_LINK_APP_URL = os.getenv("DEEP_LINK_APP_URL")
 DEEP_LINK_DOMAIN = os.getenv("DEEP_LINK_DOMAIN")
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'server.authentication.BearerTokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "server.authentication.BearerTokenAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
 }
 
-AUTH_USER_MODEL = 'server.User'
+AUTH_USER_MODEL = "server.User"

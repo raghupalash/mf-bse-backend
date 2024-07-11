@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .helpers import random_num_with_N_digits, create_username
+from .helpers import *
 from .models import UserOTP, User, UserLoginToken
 from .firebase import generate_firebase_link_for_auth, get_credentails_from_id_token
 
@@ -144,3 +144,28 @@ class ProfileView(APIView):
         }
 
         return Response(dict(status=1, data=user_data))
+
+
+class KYCUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        save_kyc_data_to_db(request.user, request.data)
+
+        payload = prepare_payload_for_bse_call(request.user)
+
+        # create user on bse
+        response = register_client_on_bse(payload)
+        if response.json().get("Status") == "1":
+            return Response(dict(status=0, data=response.json()), 400)
+        print(response.json())
+        response = authenticate_nominee(request.user)
+        if response.json().get("StatusCode") == "101":
+            return Response(dict(status=0, data=response.json()), 400)
+        print(response.json())
+
+        message = (
+            "Your account has been successfully registered with BSE! "
+            "You'll soon recieve an authentication email from BSE!"
+        )
+        return Response(dict(status=1, data=message))

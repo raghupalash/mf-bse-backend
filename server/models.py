@@ -157,7 +157,6 @@ class KycDetail(models.Model):
     updated = models.DateTimeField(auto_now=True, auto_now_add=False)
     created = models.DateTimeField(auto_now_add=True)
 
-
 class BankDetail(models.Model):
     """
     Stores bank details of user
@@ -188,3 +187,57 @@ class BankDetail(models.Model):
 
     updated = models.DateTimeField(auto_now=True, auto_now_add=False)
     created = models.DateTimeField(auto_now_add=True)
+
+
+class MutualFundList(models.Model):
+    unique_no = models.IntegerField()
+
+    scheme_code = models.CharField(max_length=10)
+    rta_scheme_code = models.CharField(max_length=10)
+    amc_scheme_code = models.CharField(max_length=10)
+
+    isin = models.CharField(max_length=12)
+    amc_code = models.CharField(max_length=50)
+    scheme_type = models.CharField(max_length=20)
+    scheme_plan = models.CharField(max_length=20)
+    scheme_name = models.CharField(max_length=200)
+
+    purchase_allowed = models.CharField(max_length=1)
+    purchase_transaction_mode = models.CharField(max_length=5)
+    minimum_purchase_amount = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    additional_purchase_amount = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    maximum_purchase_amount = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    purchase_amount_multiplier = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    purchase_cutoff_time = models.TimeField(null=True)
+
+    redemption_allowed = models.CharField(max_length=1)
+    redemption_transaction_mode = models.CharField(max_length=5)
+    minimum_redemption_qty = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    redemption_qty_multiplier = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    maximum_redemption_qty = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    redemption_amount_minimum = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    redemption_amount_maximum = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    redemption_amount_multiple = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    redemption_cutoff_time = models.TimeField(null=True)
+
+    rta_agent_code = models.CharField(max_length=10)
+    amc_active_flag = models.IntegerField(null=True)
+    dividend_reinvestment_flag = models.CharField(max_length=1)
+
+    sip_flag = models.CharField(max_length=1)
+    stp_flag = models.CharField(max_length=1)
+    swp_flag = models.CharField(max_length=1)
+    switch_flag = models.CharField(max_length=1)
+
+    settlement_type = models.CharField(max_length=5)
+    amc_ind = models.CharField(max_length=10, blank=True)
+    face_value = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+
+    start_date = models.DateField()
+    end_date = models.DateField()
+    exit_load_flag = models.CharField(max_length=1)
+    exit_load = models.IntegerField(null=True)
+    lock_in_period_flag = models.CharField(max_length=1)
+    lock_in_period = models.IntegerField(null=True)
+    channel_partner_code = models.CharField(max_length=10)
+    reopening_date = models.DateField(null=True, blank=True)

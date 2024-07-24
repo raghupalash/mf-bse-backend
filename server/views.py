@@ -1,13 +1,16 @@
 from django.core.validators import ValidationError, validate_email
 from django.core.mail import send_mail
+from django.core.paginator import Paginator
 
+from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .helpers import *
-from .models import UserOTP, User, UserLoginToken
+from .models import UserOTP, User, UserLoginToken, MutualFundList
 from .firebase import generate_firebase_link_for_auth, get_credentails_from_id_token
+from .serializers import MutualFundListSerializer
 
 
 class GenerateOTPView(APIView):
@@ -177,3 +180,30 @@ class KYCUploadView(APIView):
             "You'll soon recieve an authentication email from BSE!"
         )
         return Response(dict(status=1, data=message))
+    
+
+class MutualFundListView(ListAPIView):
+    authentication_classes = []  # Disable authentication
+    permission_classes = [AllowAny]  # Allow access to all
+
+    queryset = MutualFundList.objects.all()
+    serializer_class = MutualFundListSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = request.query_params.get('page', 1)
+        paginator = Paginator(queryset, 10)
+        funds = paginator.get_page(page)
+        serializer = self.get_serializer(funds, many=True)
+        return Response({
+            'count': paginator.count,
+            'num_pages': paginator.num_pages,
+            'results': serializer.data
+        })
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        amc_code = self.request.query_params.get('amc_code')
+        if amc_code:
+            queryset = queryset.filter(amc_code=amc_code)
+        return queryset

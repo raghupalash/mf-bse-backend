@@ -1,23 +1,11 @@
-import time
+import os
 from random import randint
 import requests
-import zeep
-from zeep import Client, Plugin
+from zeep import Client, Plugin, xsd
 from zeep.transports import Transport
-from zeep.plugins import HistoryPlugin
 from requests import Session
 
 from .models import BankDetail, KycDetail
-
-class MyLoggingPlugin(Plugin):
-
-    def ingress(self, envelope, http_headers, operation):
-        return envelope, http_headers
-
-    def egress(self, envelope, http_headers, operation, binding_options):
-        http_headers['Content-Type'] = 'text/xml; charset=utf-8;'
-        return envelope, http_headers
-
 
 def random_num_with_N_digits(n):
 
@@ -275,107 +263,8 @@ def authenticate_nominee(user):
 
     return response
 
-class HeaderModifierPlugin(Plugin):
-    def egress(self, envelope, http_headers, operation, binding_options):
-        http_headers.pop('SOAPAction')
-        header = envelope.find('{http://www.w3.org/2003/05/soap-envelope}Header')
-        if header is not None:
-            # Modify existing elements or add new ones
-            for elem in header:
-                if elem.tag.endswith('To'):
-                    elem.text = 'https://bsestarmfdemo.bseindia.com/MFOrderEntry/MFOrder.svc/Secure'
-        return envelope, http_headers
 
-
-def soap_set_wsa_headers(method_url, svc_url):
-	header = zeep.xsd.ComplexType([
-        zeep.xsd.Element('{http://www.w3.org/2005/08/addressing}Action', zeep.xsd.String()),
-        zeep.xsd.Element('{http://www.w3.org/2005/08/addressing}To', zeep.xsd.String())
-    ])
-	header_value = header(Action=method_url, To=svc_url)
-	return header_value
-
-
-def soap_get_password():
-    history = HistoryPlugin()
-    client = Client(
-        "https://bsestarmfdemo.bseindia.com/MFOrderEntry/MFOrder.svc?wsdl",
-        plugins=[HeaderModifierPlugin(), history]
-    )
-    print(client.transport.session.headers)
-    method_url = "http://bsestarmf.in/MFOrderEntry/getPassword"
-    svc_url = "https://bsestarmfdemo.bseindia.com/MFOrderEntry/MFOrder.svc/Secure"
-    header_values = soap_set_wsa_headers(method_url, svc_url)
-
-    with client.settings(strict=False, raw_response=True, force_https=False):
-        response = client.service.getPassword(
-            UserId="5972901",
-            Password="Abc@1234",
-            PassKey="59729",
-        )
-        print(response)
-        print(history.last_sent)
-        from lxml import etree
-        # Assuming 'envelope' is the Envelope object
-        envelope_xml = etree.tostring(history.last_sent['envelope'], pretty_print=True, encoding='unicode')
-        print(envelope_xml)
-
-import requests
-
-def get_password_with_requests():
-    url = "https://bsestarmfdemo.bseindia.com/MFOrderEntry/MFOrder.svc/Secure"
-    
-    headers = {
-        'Content-Type': 'application/soap+xml; charset=utf-8',
-        'SOAPAction': 'http://bsestarmf.in/MFOrderEntry/getPassword'
-    }
-    
-    body = """
-        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-    xmlns:bses="http://bsestarmf.in/">
-        <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
-            <wsa:Action>http://bsestarmf.in/MFOrderEntry/getPassword</wsa:Action>
-            <wsa:To>https://bsestarmfdemo.bseindia.com/MFOrderEntry/MFOrder.svc</wsa:To>
-        </soap:Header>
-        <soap:Body>
-            <bses:getPassword>
-                <bses:UserId>5972901</bses:UserId>
-                <bses:Password>Abc@1234</bses:Password>
-                <bses:PassKey>8569519126</bses:PassKey>
-            </bses:getPassword>
-        </soap:Body>
-    </soap:Envelope>
-    """
-    
-    response = requests.post(url, headers=headers, data=body)
-    print(response.status_code)
-    from lxml import etree
-    root = etree.fromstring(response.content)
-    # Define the namespaces
-    namespaces = {
-        's': 'http://www.w3.org/2003/05/soap-envelope',
-        'a': 'http://www.w3.org/2005/08/addressing',
-        'bses': 'http://bsestarmf.in/'
-    }
-
-    # Extract the getPasswordResult
-    result = root.xpath('//bses:getPasswordResult/text()', namespaces=namespaces)
-    print(result)
-    result = result[0]
-    # Split the result into status code and password
-    status_code, password = result.split('|')
-
-    print(f"Status Code: {status_code}")
-    print(f"Password: {password}")
-
-    return password
-
-
-from zeep import Client, xsd
-from zeep.transports import Transport
-from requests import Session
-
-def call_get_password_service(user_id, password, pass_key):
+def get_password_order():
     # Create a session object
     session = Session()
     session.headers.update({
@@ -403,15 +292,18 @@ def call_get_password_service(user_id, password, pass_key):
 
     # Define the body
     body = {
-        "UserId": user_id,
-        "Password": password,
-        "PassKey": pass_key
+        "UserId": os.environ.get('USER_ID'),
+        "Password": os.environ.get('USER_PASSWORD'),
+        "PassKey": os.environ.get('USER_PASSKEY')
     }
 
     # Call the service method
     response = client.service.getPassword(_soapheaders=[header_value], **body)
 
-    # Return the response
-    return response
+    # Return the password
+    return response.split("|")[1]
 
-# Call the functi
+def place_order():
+    client = Client(
+        wsdl="https://bsestarmfdemo.bseindia.com/StarMFWebService/StarMFWebService.svc?wsdl"
+    )

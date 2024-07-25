@@ -47,7 +47,7 @@ def save_kyc_data_to_db(user, data):
         "nominee_name": data["nominee_name"],
         "nominee_relation": data["nominee_relation"].lower(),
         "kyc_type": data["kyc_type"],
-        "ckyc_number": data["ckyc_number"],
+        "ckyc_number": data.get("ckyc_number", "")
     }
     kyc_detail = KycDetail(**kyc_data)
     kyc_detail.save()

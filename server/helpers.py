@@ -556,9 +556,9 @@ def soap_bse_transaction(transaction):
 
     # Prepare the payload
     payload = {
-        "TransCode": transaction.transaction_code,  # TODO: NEW/CANCELLATION
+        "TransCode": transaction.transaction_code,
         "TransNo": trans_no,
-        "OrderId": None,
+        "OrderId": transaction.order_id,
         "UserID": os.environ.get("USER_ID"),
         "MemberId": os.environ.get("USER_MEMBER_ID"),
         "ClientCode": transaction.user.kycdetail.client_code,
@@ -602,34 +602,52 @@ def soap_bse_transaction(transaction):
     return response
 
 
-def prepare_transaction(data, user):
+def prepare_transaction(data, user, **kwargs):
+    transaction_code = kwargs.get("transaction_code", "NEW")
+    if transaction_code not in {"NEW", "CXL"}:
+        raise Exception("Transaction code must be either NEW or CXL")
+
+    transaction_type = data.get("transaction_type", "P")
+    if transaction_type not in {"P", "R"}:
+        raise Exception("Transaction type must be either P or R")
+
+    order_id = data.get("order_id", "")
+    prev_transaction = Transaction.objects.filter(order_id=order_id).first()
+    if not prev_transaction:
+        raise Exception("Invalid order_id")
 
     # Create initial transaction object
     transaction = Transaction(
-        transaction_code=data.get("transaction_code", "NEW"),
-        transaction_type=data.get("transaction_type", "P"),
+        transaction_code=transaction_code,
+        transaction_type=transaction_type,
+        order_id=order_id,
     )
 
-    try:
-        scheme_code = data["scheme_code"]
-        amount = data["amount"]
-    except KeyError:
-        raise Exception("scheme_code and amount are required!")
+    if transaction_code == "NEW":
+        try:
+            scheme_code = data["scheme_code"]
+            amount = data["amount"]
+        except KeyError:
+            raise Exception("scheme_code and amount are required!")
 
-    # Validate scheme_code
-    scheme = MutualFundList.objects.filter(scheme_code=scheme_code).first()
-    if not scheme:
-        raise Exception("Invalid scheme_code")
+        # Validate scheme_code
+        scheme = MutualFundList.objects.filter(scheme_code=scheme_code).first()
+        if not scheme:
+            raise Exception("Invalid scheme_code")
 
-    # Validate amount
-    try:
-        amount = float(amount)
-    except ValueError:
-        raise Exception("Amount must be a valid number")
+        # Validate amount
+        try:
+            amount = float(amount)
+        except ValueError:
+            raise Exception("Amount must be a valid number")
+    else:
+        scheme = prev_transaction.scheme_plan
+        amount = prev_transaction.amount
 
     # Set validated data to transaction object
     transaction.scheme_plan = scheme
     transaction.amount = amount
+
     transaction.user = user
 
     # Save the transaction
@@ -638,22 +656,20 @@ def prepare_transaction(data, user):
     return transaction
 
 
-def create_transaction(data, user):
-    # prepare the transaction object, this function would be called from the view
-    # with relavent data.
-    # soap_bse_transaction
-    # save the successful order to the transaction object and save it
-    # will have to do something else fo sip, because sip doesn't have order_id
-    # or maybe have a completly different system for sip (api + model) -
-    # that would make things much easier for us.
-    transaction = prepare_transaction(data, user)
+def create_transaction(data, user, **kwargs):
+    # Prepare the transaction object
+    transaction = prepare_transaction(data, user, **kwargs)
+
+    # Make the transaction with BSE
     soap_response = soap_bse_transaction(transaction=transaction).split("|")
+
     order_id = soap_response[2]
     trans_no = soap_response[1]
     message = soap_response[-2]
     if order_id == "0":
         raise Exception(message)
 
+    # Save on succsfull transaction placement # TODO: Also save order date.
     transaction.bse_trans_no = trans_no
     transaction.order_id = order_id
     transaction.save()

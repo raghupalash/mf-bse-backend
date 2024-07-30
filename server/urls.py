@@ -8,6 +8,7 @@ from .views import (
     KYCUploadView,
     MutualFundListView,
     PlaceOrderView,
+    PlaceCancelOrderView,
 )
 
 urlpatterns = [
@@ -18,4 +19,7 @@ urlpatterns = [
     path("upload_kyc_details", KYCUploadView.as_view(), name="upload_kyc_details"),
     path("get_mutual_funds", MutualFundListView.as_view(), name="get_mutual_funds"),
     path("place_order", PlaceOrderView.as_view(), name="place_order"),
+    path(
+        "place_order/cancel", PlaceCancelOrderView.as_view(), name="place_cancel_order"
+    ),
 ]

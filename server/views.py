@@ -227,3 +227,18 @@ class PlaceOrderView(APIView):
             return Response(dict(status=0, data=str(e)), 400)
 
         return Response({"status": 1, "data": ret_val})
+
+
+class PlaceCancelOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        transaction_code = "CXL"
+        try:
+            ret_val = create_transaction(
+                request.data, request.user, transaction_code=transaction_code
+            )
+        except Exception as e:
+            return Response(dict(status=0, data=str(e)), 400)
+
+        return Response({"status": 1, "data": ret_val})

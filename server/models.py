@@ -298,7 +298,7 @@ class Transaction(models.Model):
         ("R", "Redemption"),
         ("A", "Additional Purchase"),
     )
-    TRANCATIONCODE = (("NEW", "NEW"), ("CANCELLATION", "CANCELLATION"))
+    TRANCATIONCODE = (("NEW", "NEW"), ("CXL", "CANCELLATION"))
     ORDERTYPE = (
         ("1", "Lumpsum"),
         ("2", "SIP"),
@@ -341,30 +341,6 @@ class Transaction(models.Model):
     all_redeem = models.BooleanField(
         blank=True, null=True
     )  ## Null means not redeem transaction, True means redeem all, False means redeem 'amount'
-
-    # for SIP transactions
-    sip_num_inst = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(120)], blank=True, null=True
-    )
-    sip_start_date = models.DateField(blank=True, null=True)
-    ## update this field after every instalment of sip
-    sip_num_inst_done = models.IntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(120)],
-        blank=True,
-        null=True,
-        default=0,
-    )
-    ## add datetime_at_mf of each instalment
-    sip_dates = models.CharField(max_length=255, blank=True)
-    ## add bse order_id of each instalment
-    sip_order_ids = models.CharField(max_length=255, blank=True)
-    # mandate = models.ForeignKey(
-    #     Mandate,
-    #     on_delete=models.PROTECT,
-    #     null=True,
-    #     related_name="transactions",
-    #     related_query_name="transaction",
-    # )
 
     # datetimes of importance
     ## datetime when order was placed on bsestar

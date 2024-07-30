@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.db import models
 
 from rest_framework.authtoken.models import Token
 
@@ -77,7 +78,6 @@ class KycDetail(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.PROTECT, related_name="kycdetail"
     )
-
     OCCUPATION = (
         ("01", "Business"),
         ("02", "Services"),
@@ -124,12 +124,22 @@ class KycDetail(models.Model):
         ("DN", "Dadra and Nagar Haveli"),
         ("DD", "Daman and Diu"),
     )
+    INCOME = (
+        ("31", "Below 1 Lakh"),
+        ("32", "> 1 <=5 Lacs"),
+        ("33", ">5 <=10 Lacs"),
+        ("34", ">10 <= 25 Lacs"),
+        ("35", "> 25 Lacs < = 1 Crore"),
+        ("36", "Above 1 Crore"),
+    )
 
+    client_code = models.CharField(max_length=50)
     # most imp field
     pan = models.CharField(max_length=10, help_text="", blank=True)
 
     # fields required by bsestar client creation
     tax_status = models.CharField(max_length=2, default="01", blank=True)
+    income_slab = models.CharField(max_length=10, choices=INCOME)
     occ_code = models.CharField(
         max_length=2, default="02", choices=OCCUPATION, blank=True
     )
@@ -156,6 +166,7 @@ class KycDetail(models.Model):
 
     updated = models.DateTimeField(auto_now=True, auto_now_add=False)
     created = models.DateTimeField(auto_now_add=True)
+
 
 class BankDetail(models.Model):
     """
@@ -204,20 +215,40 @@ class MutualFundList(models.Model):
 
     purchase_allowed = models.CharField(max_length=1)
     purchase_transaction_mode = models.CharField(max_length=5)
-    minimum_purchase_amount = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    additional_purchase_amount = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    maximum_purchase_amount = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    purchase_amount_multiplier = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    minimum_purchase_amount = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    additional_purchase_amount = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    maximum_purchase_amount = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    purchase_amount_multiplier = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
     purchase_cutoff_time = models.TimeField(null=True)
 
     redemption_allowed = models.CharField(max_length=1)
     redemption_transaction_mode = models.CharField(max_length=5)
-    minimum_redemption_qty = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    redemption_qty_multiplier = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    maximum_redemption_qty = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    redemption_amount_minimum = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    redemption_amount_maximum = models.DecimalField(max_digits=25, decimal_places=10, null=True)
-    redemption_amount_multiple = models.DecimalField(max_digits=25, decimal_places=10, null=True)
+    minimum_redemption_qty = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    redemption_qty_multiplier = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    maximum_redemption_qty = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    redemption_amount_minimum = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    redemption_amount_maximum = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
+    redemption_amount_multiple = models.DecimalField(
+        max_digits=25, decimal_places=10, null=True
+    )
     redemption_cutoff_time = models.TimeField(null=True)
 
     rta_agent_code = models.CharField(max_length=10)
@@ -241,3 +272,124 @@ class MutualFundList(models.Model):
     lock_in_period = models.IntegerField(null=True)
     channel_partner_code = models.CharField(max_length=10)
     reopening_date = models.DateField(null=True, blank=True)
+
+
+# Internal transaction table
+class Transaction(models.Model):
+    """
+    Saves each transaction's details for internal record
+    Used to create records of TransactionBSE and TransactionXsipBSE
+            that are sent to BSEStar's API endpoints
+    """
+
+    # status of the transaction. most imp states are 1, 2 and 6 for bse
+    STATUS = (
+        ("0", "Requested internally"),  # bse order not placed yet
+        ("1", "Cancelled/Failed- refer to status_comment for reason"),
+        ("2", "Order successfully placed at BSE"),
+        ("4", "Redirected after payment"),
+        ("5", "Payment provisionally made"),
+        ("6", "Order sucessfully completed at BSE"),
+        ("7", "Reversed"),  # when investment has been redeemed
+        ("8", "Concluded"),  # valid for SIP only when SIP completed/stopped
+    )
+    TRANSACTIONTYPE = (
+        ("P", "Purchase"),
+        ("R", "Redemption"),
+        ("A", "Additional Purchase"),
+    )
+    TRANCATIONCODE = (("NEW", "NEW"), ("CANCELLATION", "CANCELLATION"))
+    ORDERTYPE = (
+        ("1", "Lumpsum"),
+        ("2", "SIP"),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="transactions",
+        related_query_name="transaction",
+    )
+    scheme_plan = models.ForeignKey(
+        MutualFundList,
+        on_delete=models.PROTECT,
+        related_name="transactions",
+        related_query_name="transaction",
+    )
+
+    transaction_code = models.CharField(
+        max_length=15, blank=False, choices=TRANCATIONCODE, default="NEW"
+    )
+    transaction_type = models.CharField(
+        max_length=1, blank=False, choices=TRANSACTIONTYPE, default="P"
+    )  ##purchase redemption etc
+    order_type = models.CharField(
+        max_length=1, blank=False, choices=ORDERTYPE, default="1"
+    )  ##lumpsum or sip
+
+    # track status of transaction and comments if any from bse or rta
+    status = models.CharField(max_length=1, choices=STATUS, default="0")
+    status_comment = models.CharField(max_length=1000, blank=True)
+
+    amount = models.FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(1000000)],
+        blank=True,
+        null=True,
+    )
+
+    # for redeem transactions
+    all_redeem = models.BooleanField(
+        blank=True, null=True
+    )  ## Null means not redeem transaction, True means redeem all, False means redeem 'amount'
+
+    # for SIP transactions
+    sip_num_inst = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(120)], blank=True, null=True
+    )
+    sip_start_date = models.DateField(blank=True, null=True)
+    ## update this field after every instalment of sip
+    sip_num_inst_done = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(120)],
+        blank=True,
+        null=True,
+        default=0,
+    )
+    ## add datetime_at_mf of each instalment
+    sip_dates = models.CharField(max_length=255, blank=True)
+    ## add bse order_id of each instalment
+    sip_order_ids = models.CharField(max_length=255, blank=True)
+    # mandate = models.ForeignKey(
+    #     Mandate,
+    #     on_delete=models.PROTECT,
+    #     null=True,
+    #     related_name="transactions",
+    #     related_query_name="transaction",
+    # )
+
+    # datetimes of importance
+    ## datetime when order was placed on bsestar
+    datetime_at_mf = models.DateTimeField(
+        auto_now=False, auto_now_add=False, blank=True, null=True
+    )
+
+    # datetime of purchase of units on mf
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # set these fields after the transaction is successfully PLACED
+    ## this is the trans_no of the order on bsestar
+    ## that has successfully placed this transaction
+    bse_trans_no = models.CharField(max_length=20)
+    order_id = models.CharField(max_length=20)
+
+    # set these fields after the transaction is successfully COMPLETED
+    folio_number = models.CharField(max_length=25, blank=True)
+
+    # Returns - set these fields daily after transaction is COMPLETED
+    return_till_date = models.FloatField(
+        blank=True, null=True
+    )  # annualised compounded annually. make it absolute return
+    return_date = models.DateField(
+        auto_now=False, auto_now_add=False, blank=True, null=True
+    )  # date as of return calculated
+    return_grade = models.CharField(max_length=200)

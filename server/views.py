@@ -89,14 +89,14 @@ class VerifyTokenView(APIView):
         token = request.data.get("token", None)
         if not token:
             return Response(dict(status=0, data="Email is required!"), 400)
-        #token_credentials = get_credentails_from_id_token(token)
+        # token_credentials = get_credentails_from_id_token(token)
         token_credentials = {
-            "firebase_user_id": "98765432",
+            "firebase_user_id": "9876543291",
             "photo_url": "",
             "email": "palash@sbnri.com",
             "first_name": "",
             "last_name": "",
-            "email_verified": "True"
+            "email_verified": "True",
         }
 
         if not token_credentials:
@@ -161,7 +161,7 @@ class KYCUploadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        save_kyc_data_to_db(request.user, request.data)
+        kyc_detail, _ = save_kyc_data_to_db(request.user, request.data)
 
         payload = prepare_payload_for_bse_call(request.user)
 
@@ -169,18 +169,24 @@ class KYCUploadView(APIView):
         response = register_client_on_bse(payload)
         if response.json().get("Status") == "1":
             return Response(dict(status=0, data=response.json()), 400)
-        print(response.json())
+        print(response)
         response = authenticate_nominee(request.user)
         if response.json().get("StatusCode") == "101":
             return Response(dict(status=0, data=response.json()), 400)
-        print(response.json())
+        print(response)
+
+        try:
+            response = soap_upload_fatca(kyc_detail.client_code)
+        except Exception as e:
+            return Response(dict(status=0, data=e), 400)
+        print(response)
 
         message = (
             "Your account has been successfully registered with BSE! "
             "You'll soon recieve an authentication email from BSE!"
         )
         return Response(dict(status=1, data=message))
-    
+
 
 class MutualFundListView(ListAPIView):
     authentication_classes = []  # Disable authentication
@@ -191,19 +197,33 @@ class MutualFundListView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        page = request.query_params.get('page', 1)
+        page = request.query_params.get("page", 1)
         paginator = Paginator(queryset, 10)
         funds = paginator.get_page(page)
         serializer = self.get_serializer(funds, many=True)
-        return Response({
-            'count': paginator.count,
-            'num_pages': paginator.num_pages,
-            'results': serializer.data
-        })
+        return Response(
+            {
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "results": serializer.data,
+            }
+        )
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        amc_code = self.request.query_params.get('amc_code')
+        amc_code = self.request.query_params.get("amc_code")
         if amc_code:
             queryset = queryset.filter(amc_code=amc_code)
         return queryset
+
+
+class PlaceOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            ret_val = create_transaction(request.data, request.user)
+        except Exception as e:
+            return Response(dict(status=0, data=str(e)), 400)
+
+        return Response({"status": 1, "data": ret_val})

@@ -6,7 +6,8 @@ from .views import (
     VerifyTokenView,
     ProfileView,
     KYCUploadView,
-    MutualFundListView
+    MutualFundListView,
+    PlaceOrderView,
 )
 
 urlpatterns = [
@@ -15,5 +16,6 @@ urlpatterns = [
     path("verify_token", VerifyTokenView.as_view(), name="verify_token"),
     path("profile", ProfileView.as_view(), name="profile"),
     path("upload_kyc_details", KYCUploadView.as_view(), name="upload_kyc_details"),
-    path("get_mutual_funds", MutualFundListView.as_view(), name="get_mutual_funds")
+    path("get_mutual_funds", MutualFundListView.as_view(), name="get_mutual_funds"),
+    path("place_order", PlaceOrderView.as_view(), name="place_order"),
 ]

@@ -9,6 +9,7 @@ from .views import (
     MutualFundListView,
     PlaceOrderView,
     PlaceCancelOrderView,
+    ListTransactionsView,
 )
 
 urlpatterns = [
@@ -21,5 +22,8 @@ urlpatterns = [
     path("place_order", PlaceOrderView.as_view(), name="place_order"),
     path(
         "place_order/cancel", PlaceCancelOrderView.as_view(), name="place_cancel_order"
+    ),
+    path(
+        "list_orders", ListTransactionsView.as_view(), name="list_orders"
     ),
 ]

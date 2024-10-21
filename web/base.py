@@ -1,0 +1,1 @@
+BSE_URL = "https://bsestarmf.in/"

@@ -79,8 +79,8 @@ class KycDetail(models.Model):
         User, on_delete=models.PROTECT, related_name="kycdetail"
     )
     OCCUPATION = (
-        ("01", "Business"),
         ("02", "Services"),
+        ("03", "Professional"),
     )
     GENDER = (
         ("M", "Male"),
@@ -133,9 +133,15 @@ class KycDetail(models.Model):
         ("36", "Above 1 Crore"),
     )
 
+    CITIZEN_TYPE = (
+        ("RI", "Resident Indian"),
+        ("NRI", "Non-Resident Indian"),
+    )
+
     client_code = models.CharField(max_length=50)
     # most imp field
     pan = models.CharField(max_length=10, help_text="", blank=True)
+    citizen_type = models.CharField(max_length=10, choices=CITIZEN_TYPE, blank=True)
 
     # fields required by bsestar client creation
     tax_status = models.CharField(max_length=2, default="01", blank=True)
@@ -275,6 +281,11 @@ class MutualFundList(models.Model):
 
 
 # Internal transaction table
+
+class CustomTransactionManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        return super().get_queryset().filter(is_deleted=False)
+
 class Transaction(models.Model):
     """
     Saves each transaction's details for internal record
@@ -303,6 +314,9 @@ class Transaction(models.Model):
         ("1", "Lumpsum"),
         ("2", "SIP"),
     )
+
+    objects = CustomTransactionManager()
+    all_objects = models.Manager()
 
     user = models.ForeignKey(
         User,
@@ -369,3 +383,102 @@ class Transaction(models.Model):
         auto_now=False, auto_now_add=False, blank=True, null=True
     )  # date as of return calculated
     return_grade = models.CharField(max_length=200)
+
+    is_deleted = models.BooleanField(default=False)
+
+
+class KFintechPortfolio(models.Model):
+    sno = models.CharField(max_length=20)
+    fmcode = models.CharField(max_length=20)
+    td_fund = models.CharField(max_length=4)
+    td_acno = models.CharField(max_length=15)
+    schpln = models.CharField(max_length=4)
+    divopt = models.CharField(max_length=1)
+    funddesc = models.CharField(max_length=200)
+    td_purred = models.CharField(max_length=1)
+    td_trno = models.CharField(max_length=10)
+    smcode = models.CharField(max_length=10)
+    chqno = models.CharField(max_length=20)
+    invname = models.CharField(max_length=120)
+    jtname1 = models.CharField(max_length=80)
+    jtname2 = models.CharField(max_length=80)
+    add1 = models.CharField(max_length=80)
+    add2 = models.CharField(max_length=80)
+    add3 = models.CharField(max_length=80)
+    city = models.CharField(max_length=60)
+    pin = models.CharField(max_length=10)
+    state = models.CharField(max_length=60)
+    country = models.CharField(max_length=40)
+    dob = models.DateField(null=True, blank=True)
+    rphone = models.CharField(max_length=40)
+    rphone1 = models.CharField(max_length=1)
+    rphone2 = models.CharField(max_length=1)
+    mobile = models.CharField(max_length=40)
+    ophone = models.CharField(max_length=40)
+    ophone1 = models.CharField(max_length=1)
+    ophone2 = models.CharField(max_length=1)
+    fax = models.CharField(max_length=40)
+    faxoff = models.CharField(max_length=1)
+    status = models.CharField(max_length=2)
+    occpn = models.CharField(max_length=10)
+    email = models.EmailField(max_length=150)
+    bnkacno = models.CharField(max_length=50)
+    bname = models.CharField(max_length=80)
+    bnkactype = models.CharField(max_length=40)
+    branch = models.CharField(max_length=5)
+    badd1 = models.CharField(max_length=80)
+    badd2 = models.CharField(max_length=80)
+    badd3 = models.CharField(max_length=80)
+    bcity = models.CharField(max_length=60)
+    bphone = models.CharField(max_length=40)
+    pangno = models.CharField(max_length=50)
+    trnmode = models.CharField(max_length=1)
+    trnstat = models.CharField(max_length=1)
+    td_branch = models.CharField(max_length=80)
+    isctrno = models.CharField(max_length=10)
+    td_trdt = models.DateField(null=True, blank=True)
+    td_prdt = models.DateField(null=True, blank=True)
+    td_pop = models.CharField(max_length=30)
+    loadper = models.DecimalField(max_digits=18, decimal_places=4)
+    td_units = models.DecimalField(max_digits=20, decimal_places=3)
+    td_amt = models.DecimalField(max_digits=20, decimal_places=2)
+    load1 = models.DecimalField(max_digits=20, decimal_places=2)
+    td_agent = models.CharField(max_length=50)
+    td_broker = models.CharField(max_length=50)
+    brokper = models.CharField(max_length=9)
+    brokcomm = models.DecimalField(max_digits=15, decimal_places=2)
+    invid = models.CharField(max_length=1)
+    crdate = models.DateField(null=True, blank=True)
+    crtime = models.CharField(max_length=6)
+    trnsub = models.CharField(max_length=1)
+    td_appno = models.CharField(max_length=20)
+    unqno = models.CharField(max_length=50)
+    trdesc = models.CharField(max_length=40)
+    td_trtype = models.CharField(max_length=10)
+    purdate = models.DateField(null=True, blank=True)
+    puramt = models.DecimalField(max_digits=20, decimal_places=2)
+    purunits = models.DecimalField(max_digits=20, decimal_places=3)
+    trflag = models.CharField(max_length=2)
+    sfunddt = models.DateField(null=True, blank=True)
+    chqdate = models.DateField(null=True, blank=True)
+    chqbank = models.CharField(max_length=80)
+    nctremarks = models.CharField(max_length=200)
+    td_scheme = models.CharField(max_length=2)
+    td_plan = models.CharField(max_length=2)
+    td_nav = models.CharField(max_length=30)
+    annper = models.CharField(max_length=10)
+    annamt = models.CharField(max_length=10)
+    td_ptrno = models.CharField(max_length=10)
+    td_pbranch = models.CharField(max_length=5)
+    oldacno = models.CharField(max_length=10)
+    ihno = models.CharField(max_length=15)
+
+    def __str__(self):
+        return f'{self.invname} - {self.funddesc}'
+    
+
+class BSERequest(models.Model):
+    payload = models.JSONField()
+    response = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

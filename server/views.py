@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .helpers import *
 from .models import UserOTP, User, UserLoginToken, MutualFundList
 from .firebase import generate_firebase_link_for_auth, get_credentails_from_id_token
-from .serializers import MutualFundListSerializer
+from .serializers import MutualFundListSerializer, TransactionSerailizer
 
 
 class GenerateOTPView(APIView):
@@ -91,9 +91,9 @@ class VerifyTokenView(APIView):
             return Response(dict(status=0, data="Email is required!"), 400)
         # token_credentials = get_credentails_from_id_token(token)
         token_credentials = {
-            "firebase_user_id": "9876543291",
+            "firebase_user_id": "987654329123",
             "photo_url": "",
-            "email": "palash@sbnri.com",
+            "email": "singhpalash0@gmail.com",
             "first_name": "",
             "last_name": "",
             "email_verified": "True",
@@ -163,28 +163,27 @@ class KYCUploadView(APIView):
     def post(self, request):
         kyc_detail, _ = save_kyc_data_to_db(request.user, request.data)
 
-        payload = prepare_payload_for_bse_call(request.user)
+        # payload = prepare_payload_for_bse_call(request.user)
 
         # create user on bse
-        response = register_client_on_bse(payload)
-        if response.json().get("Status") == "1":
-            return Response(dict(status=0, data=response.json()), 400)
-        print(response)
-        response = authenticate_nominee(request.user)
-        if response.json().get("StatusCode") == "101":
-            return Response(dict(status=0, data=response.json()), 400)
-        print(response)
+        # response = register_client_on_bse(payload)
+        # if response.json().get("Status") == "1":
+        #     return Response(dict(status=0, data=response.json()), 400)
 
-        try:
-            response = soap_upload_fatca(kyc_detail.client_code)
-        except Exception as e:
-            return Response(dict(status=0, data=e), 400)
-        print(response)
+        # response = authenticate_nominee(request.user)
+        # if response.json().get("StatusCode") == "101":
+        #     return Response(dict(status=0, data=response.json()), 400)
 
-        message = (
-            "Your account has been successfully registered with BSE! "
-            "You'll soon recieve an authentication email from BSE!"
-        )
+        # try:
+        #     response = soap_upload_fatca(kyc_detail.client_code)
+        # except Exception as e:
+        #     return Response(dict(status=0, data=e), 400)
+        # print(response)
+
+        # message = (
+        #     "Your account has been successfully registered with BSE! "
+        #     "You'll soon recieve an authentication email from BSE!"
+        # )
         return Response(dict(status=1, data=message))
 
 
@@ -242,3 +241,32 @@ class PlaceCancelOrderView(APIView):
             return Response(dict(status=0, data=str(e)), 400)
 
         return Response({"status": 1, "data": ret_val})
+    
+
+class ListTransactionsView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerailizer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = request.query_params.get("page", 1)
+        paginator = Paginator(queryset, 10)
+        funds = paginator.get_page(page)
+        serializer = self.get_serializer(funds, many=True)
+        return Response(
+            {
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "results": serializer.data,
+            }
+        )
+
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(user=self.request.user)
+
+        amc_code = self.request.query_params.get("amc_code")
+        if amc_code:
+            queryset = queryset.filter(amc_code=amc_code)
+        return queryset

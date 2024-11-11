@@ -409,7 +409,7 @@ def soap_star_mf_web_service_mfapi(flag: str, param: str):
         print("Response XML (Formatted):")
         print(etree.tostring(raw_response_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
 
-    return response[1]
+    return response
 
 
 def soap_upload_fatca(client_code: str):
@@ -838,7 +838,7 @@ def soap_bse_transaction(
         secure_url=f"{BSE_URL}MFOrderEntry/MFOrder.svc/Secure"
     )
 
-    trans_no = random_num_with_N_digits(10)
+    trans_no = random_num_with_N_digits(6)
 
     # Prepare the payload
     payload = {
@@ -960,6 +960,15 @@ def create_transaction(data, user, **kwargs):
     if order_id == "0":
         raise Exception(message)
 
+
+    response = response.split("|")
+    order_id = response[2]
+    trans_no = response[1]
+    message = response[-2]
+    if order_id == "0":
+        raise Exception(message)
+
+
     # Save on succsfull transaction placement # TODO: Also save order date.
     transaction.bse_trans_no = trans_no
     transaction.order_id = order_id
@@ -1009,18 +1018,18 @@ def soap_bse_order_status(
 
     # Send the SOAP request
     response = client.service.OrderStatus(_soapheaders=[header_value], **payload)
-    if history.last_sent:
-        raw_xml = history.last_sent["envelope"]
+    # if history.last_sent:
+    #     raw_xml = history.last_sent["envelope"]
 
-        # Pretty-print the XML
-        print("Request XML (Formatted):")
-        print(etree.tostring(raw_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
+    #     # Pretty-print the XML
+    #     print("Request XML (Formatted):")
+    #     print(etree.tostring(raw_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
 
-    # Print the raw response XML
-    if history.last_received:
-        raw_response_xml = history.last_received["envelope"]
-        print("Response XML (Formatted):")
-        print(etree.tostring(raw_response_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
+    # # Print the raw response XML
+    # if history.last_received:
+    #     raw_response_xml = history.last_received["envelope"]
+    #     print("Response XML (Formatted):")
+    #     print(etree.tostring(raw_response_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
     
     return response
 
@@ -1142,6 +1151,7 @@ def soap_bse_xsip_order_entry(
     client_code: str,
     scheme_code: str,
     start_date: str,
+    end_date: str,
     mandate_id: str,
     amount: str,
     first_order_today: str = "Y",
@@ -1275,12 +1285,14 @@ def rest_starmf_xsip_registration(
     client_code: str,
     installment_amount: float,
     mandate_id: str,
-    no_of_installments: int = 20,
+    no_of_installments: int = 0, # No. of installments not allowed in Daily XSIP.
     internal_ref_no: str = "",
     folio_no: str = "",
     euin: str = "",
     first_order_flag: str = "Y",
-    start_date: str = None
+    start_date: str = None,
+    end_date: str = None,
+    frequency_type: str = "MONTHLY"
 ):
     url = f"{BSE_URL}StarMFAPI/api/XSIP/XSIPRegistration"
     headers = {
@@ -1305,10 +1317,10 @@ def rest_starmf_xsip_registration(
         "TransMode": "P",                   # Constant value for demat/physical
         "DPTransMode": "P",                 # Constant value for CDSL/NSDL/PHYSICAL
         "StartDate": start_date,
-        "FrequencyType": "MONTHLY",         # Constant value
+        "FrequencyType": frequency_type,         # Constant value
         "FrequencyAllowed": "1",            # Constant value
-        "InstAmount": str(installment_amount),  # Convert float to string
-        "NoOfInst": str(no_of_installments),   # Convert int to string
+        "InstAmount": installment_amount,  # Convert float to string
+        "NoOfInst": no_of_installments,   # Convert int to string
         "Remarks": "",                      # Default empty string
         "FolioNo": folio_no,                # Empty unless provided
         "FirstOrderFlag": first_order_flag,
@@ -1317,7 +1329,7 @@ def rest_starmf_xsip_registration(
         "EUINFlag": euin_flag,
         "DPC": "Y",                         # Constant value
         "SubBrokerARN": "",                 # Default empty string
-        "EndDate": "",                      # Default empty string
+        "EndDate": end_date,                      # Default empty string
         "RegnType": "XSIP",                 # Constant value
         "Brokerage": "",                    # Default empty string
         "MandateId": mandate_id,
@@ -1333,7 +1345,7 @@ def rest_starmf_xsip_registration(
         "Filler5": "",                      # Default empty string
         "Filler6": ""                       # Default empty string
     }
-
+    print(payload)
     response = requests.post(url, headers=headers, json=payload)
     
     return response.json()
@@ -1775,6 +1787,7 @@ def rest_single_payment_gateway(
     mode_of_payment: str,
     bank_code: str,
     vpa_id: Optional[str] = None,
+    neft_reference: Optional[str] = None,
 ):
     url = f"{BSE_URL}StarMFSinglePaymentAPI/Single/Payment"
     
@@ -1797,7 +1810,7 @@ def rest_single_payment_gateway(
         "ordernumber": order_number,
         "totalamount": total_amount,
         "internalrefno": str(uuid.uuid4())[:10],  # Generate a unique reference number
-        "NEFTreference": "",
+        "NEFTreference": neft_reference,
         "mandateid": "",
         "vpaid": vpa_id if mode_of_payment == "UPI" else "",
         "loopbackURL": "https://sbnri.com/p/banking",
@@ -1811,7 +1824,6 @@ def rest_single_payment_gateway(
     
     try:
         response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
         return response.json()
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error making API request: {str(e)}")

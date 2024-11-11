@@ -5,8 +5,8 @@ import csv
 from datetime import datetime
 from django.db import transaction
 
-
 from server.models import MutualFundList
+from server.models import SIPScheme
 
 
 def parse_date(date_string):
@@ -70,11 +70,39 @@ def import_mutual_funds():
                 reopening_date=parse_date(row["ReOpening Date"]) if row["ReOpening Date"] else None,
             )
 
+def import_sip_schemes(file_name):
+    file_path = os.path.join("scheme_master", file_name)
 
-if __name__ == "__main__":
-    try:
-        import_mutual_funds()
-        print("Data import completed successfully.")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        print("All changes have been rolled back.")
+    with open(file_path, 'r') as file:
+        reader = csv.DictReader(file, delimiter='|')
+
+        for row in reader:
+            scheme, created = SIPScheme.objects.get_or_create(
+                amc_code=row['AMC CODE'],
+                amc_name=row['AMC NAME'],
+                scheme_code=row['SCHEME CODE'],
+                scheme_name=row['SCHEME NAME'],
+                sip_transaction_mode=row['SIP TRANSACTION MODE'],
+                sip_frequency=row['SIP FREQUENCY'],
+                sip_dates=row['SIP DATES'],
+                sip_minimum_gap=row['SIP MINIMUM GAP'] or 0,
+                sip_maximum_gap=row['SIP MAXIMUM GAP'] or 0,
+                sip_installment_gap=row['SIP INSTALLMENT GAP'] or 0,
+                sip_status=row['SIP STATUS'],
+                sip_minimum_installment_amount=row['SIP MINIMUM INSTALLMENT AMOUNT'] or 0,
+                sip_maximum_installment_amount=row.get('SIP MAXIMUM INSTALLMENT AMOUNT', None),
+                sip_multiplier_amount=row['SIP MULTIPLIER AMOUNT'] or 0,
+                sip_minimum_installment_numbers=row['SIP MINIMUM INSTALLMENT NUMBERS'] or 0,
+                sip_maximum_installment_numbers=row.get('SIP MAXIMUM INSTALLMENT NUMBERS', None),
+                scheme_isin=row['SCHEME ISIN'],
+                scheme_type=row['SCHEME TYPE'],
+                pause_flag=row['PAUSE FLAG'],
+                pause_minimum_installments=row.get('PAUSE MINIMUM INSTALLMENTS', None),
+                pause_maximum_installments=row.get('PAUSE MAXIMUM INSTALLMENTS', None),
+                pause_modification_count=row.get('PAUSE MODIFICATION COUNT', None),
+                filler_1=row.get('FILLER 1', None),
+                filler_2=row.get('FILLER 2', None),
+                filler_3=row.get('FILLER 3', None),
+                filler_4=row.get('FILLER 4', None),
+                filler_5=row.get('FILLER 5', None),
+            )

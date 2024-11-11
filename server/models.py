@@ -482,3 +482,36 @@ class BSERequest(models.Model):
     response = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class SIPScheme(models.Model):
+    amc_code = models.CharField(max_length=100, default="")
+    amc_name = models.CharField(max_length=255, default="")
+    scheme_code = models.CharField(max_length=100, default="")
+    scheme_name = models.CharField(max_length=255, default="")
+    sip_transaction_mode = models.CharField(max_length=50, default="")
+    sip_frequency = models.CharField(max_length=50, default="")
+    sip_dates = models.CharField(max_length=255, default="")
+    sip_minimum_gap = models.CharField(max_length=100, default="")
+    sip_maximum_gap = models.CharField(max_length=100, default="")
+    sip_installment_gap = models.CharField(max_length=100, default="")
+    sip_status = models.CharField(max_length=50, default="")
+    sip_minimum_installment_amount = models.CharField(max_length=100, default="")
+    sip_maximum_installment_amount = models.CharField(max_length=100, default="", null=True, blank=True)
+    sip_multiplier_amount = models.CharField(max_length=100, default="")
+    sip_minimum_installment_numbers = models.CharField(max_length=100, default="")
+    sip_maximum_installment_numbers = models.CharField(max_length=100, default="", null=True, blank=True)
+    scheme_isin = models.CharField(max_length=50, default="")
+    scheme_type = models.CharField(max_length=50, default="")
+    pause_flag = models.CharField(max_length=1, default="")
+    pause_minimum_installments = models.CharField(max_length=100, default="", null=True, blank=True)
+    pause_maximum_installments = models.CharField(max_length=100, default="", null=True, blank=True)
+    pause_modification_count = models.CharField(max_length=100, default="", null=True, blank=True)
+    filler_1 = models.CharField(max_length=255, default="", null=True, blank=True)
+    filler_2 = models.CharField(max_length=255, default="", null=True, blank=True)
+    filler_3 = models.CharField(max_length=255, default="", null=True, blank=True)
+    filler_4 = models.CharField(max_length=255, default="", null=True, blank=True)
+    filler_5 = models.CharField(max_length=255, default="", null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.scheme_name} ({self.amc_code})'

@@ -1,0 +1,86 @@
+<html>
+<head>
+  <title>Redirecting to Bank</title>
+  <style>
+    .bodytxt4 {
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      color: #666666;
+    }
+    .bodytxt {
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      font-weight: normal;
+      color: #000000;
+    }
+    .bullet1 {
+      list-style-type: square;
+      list-style-position: inside;
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      color: #FF9900;
+    }
+    .bodytxt2 {
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      font-size: 8pt;
+      color: #333333;
+    }
+    a.sac2 {
+      color: #000000;
+      font-family: Verdana, Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    a.sac2:visited {
+      color: #314D5A;
+    }
+    a.sac2:hover {
+      color: #FF9900;
+      text-decoration: underline;
+    }
+  </style>
+  <script>
+    document.oncontextmenu = () => false;
+  </script>
+</head>
+<body>
+  <table width="100%">
+    <tr>
+      <td align="center">
+        <span class="bodytxt4">Your payment request is being processed...</span>
+        <table width="80%" bgcolor="#CCCCCC">
+          <tr>
+            <td bgcolor="#FFFFFF">
+              <ul class="bodytxt2">
+                <li class="bullet1">This is a secure payment gateway using 128-bit SSL encryption.</li>
+                <li class="bullet1">Please allow a few seconds for the transaction to process.</li>
+                <li class="bullet1">Do not press "Submit" again, or use "Back" or "Refresh" buttons.</li>
+              </ul>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+  <form name="Bankfrm" method="post" action="https://netbanking.hdfcbank.com/netbanking/merchant">
+    <input type="hidden" name="ClientCode" value="24110656691">
+    <input type="hidden" name="MerchantCode" value="BILLDKINDI24">
+    <input type="hidden" name="TxnAmount" value="200.00">
+    <input type="hidden" name="TxnScAmount" value="0.00">
+    <input type="hidden" name="MerchantRefNo" value="YHDF2472214404">
+    <input type="hidden" name="SuccessStaticFlag" value="N">
+    <input type="hidden" name="FailureStaticFlag" value="N">
+    <input type="hidden" name="Date" value="06/11/2024 13:40:34">
+    <input type="hidden" name="ClientAccNum" value="50100697790150">
+    <input type="hidden" name="DynamicUrl" value="https://www.billdesk.com/pgidsk/PGIProcessResponse/HDF">
+    <input type="hidden" name="CheckSum" value="1909744849">
+    <input type="hidden" name="TxnCurrency" value="INR">
+  </form>
+  <script>
+    document.Bankfrm.submit();
+  </script>
+</body>
+</html>

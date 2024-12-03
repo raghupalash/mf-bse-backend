@@ -12,8 +12,8 @@ from sbnribanking.logging import custom_slack_logging
 from investment_tracker.models import Mutual_Fund_Tracker
 
 
-BSE_URL = "https://bsestarmfdemo.bseindia.com/"
-BSE_PASSWORD = "Sbnri#1pass"
+BSE_URL = "https://bsestarmf.in/"
+BSE_PASSWORD = "Sbnri@2pass"
 BSE_USER_ID = "5972901"
 BSE_MEMBER_ID = "59729"
 BSE_PASS_KEY = "Freedom"

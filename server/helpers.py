@@ -13,6 +13,10 @@ import base64
 from .models import BankDetail, KycDetail, Transaction, MutualFundList, BSERequest
 
 
+BSE_MEMBER_ID = os.environ.get("USER_MEMBER_ID")
+BSE_PASSWORD = os.environ.get("USER_PASSWORD")
+BSE_USER_ID = os.environ.get("USER_ID")
+
 def random_num_with_N_digits(n):
 
     from random import randint
@@ -880,7 +884,6 @@ def soap_bse_transaction(
         "Filler5": None,
         "Filler6": None,
     }
-    print(payload)
     # Send the SOAP request
     response = client.service.orderEntryParam(_soapheaders=[header_value], **payload)
     BSERequest.objects.create(
@@ -1281,15 +1284,15 @@ def soap_get_child_order_details(client_code: str, regn_no: str):
 
 
 def rest_starmf_xsip_registration(
-    scheme_cd: str,
     client_code: str,
-    installment_amount: float,
+    scheme_code: str,
+    amount: float,
     mandate_id: str,
-    no_of_installments: int = 0, # No. of installments not allowed in Daily XSIP.
-    internal_ref_no: str = "",
+    no_of_installments: int = "", # No. of installments not allowed in Daily XSIP.
+    unique_ref_no: str = "",
     folio_no: str = "",
     euin: str = "",
-    first_order_flag: str = "Y",
+    first_order_today: str = "Y",
     start_date: str = None,
     end_date: str = None,
     frequency_type: str = "MONTHLY"
@@ -1311,19 +1314,19 @@ def rest_starmf_xsip_registration(
         "LoginId": os.environ.get("USER_ID"),         # To be replaced with actual login ID
         "MemberCode": os.environ.get("USER_MEMBER_ID"),     # To be replaced with actual member ID
         "Password": os.environ.get("USER_PASSWORD"),        # To be replaced with actual password
-        "SchemeCode": scheme_cd,
+        "SchemeCode": scheme_code,
         "ClientCode": client_code,
-        "IntRefNo": internal_ref_no,
+        "IntRefNo": unique_ref_no,
         "TransMode": "P",                   # Constant value for demat/physical
         "DPTransMode": "P",                 # Constant value for CDSL/NSDL/PHYSICAL
         "StartDate": start_date,
         "FrequencyType": frequency_type,         # Constant value
         "FrequencyAllowed": "1",            # Constant value
-        "InstAmount": installment_amount,  # Convert float to string
+        "InstAmount": amount,  # Convert float to string
         "NoOfInst": no_of_installments,   # Convert int to string
         "Remarks": "",                      # Default empty string
         "FolioNo": folio_no,                # Empty unless provided
-        "FirstOrderFlag": first_order_flag,
+        "FirstOrderFlag": first_order_today,
         "SubBrCode": "",                    # Default empty string
         "EUIN": euin,
         "EUINFlag": euin_flag,
@@ -1388,9 +1391,9 @@ def rest_starmf_pause_xsip(
     }
 
     payload = {
-        "LoginId" : os.environ.get("USER_ID"),
-        "MemberCode" : os.environ.get("USER_MEMBER_ID"),
-        "Password" : os.environ.get("USER_PASSWORD"),
+        "LoginId" : BSE_USER_ID,
+        "MemberCode" : BSE_MEMBER_ID,
+        "Password" : BSE_PASSWORD,
         "ClientCode" : client_code,
         "RegistrationType" : regn_type,
         "RegistrationNumber" : regn_no,
@@ -1698,7 +1701,7 @@ def pretty_print_xml(xml_string):
     return pretty_xml
 
 def rest_bse_image_upload(client_code: str):
-    image_name = os.environ.get("USER_MEMBER_ID") + client_code + ".pdf"
+    image_name = BSE_MEMBER_ID + client_code + ".pdf"
     pdf_path = "user_cheque_images/" + image_name
     url = f"{BSE_URL}StarMFImageUpload/api/ImageUpload/ImageUploadBase64"
     
@@ -1706,7 +1709,7 @@ def rest_bse_image_upload(client_code: str):
         "APIKey": "VmxST1UyRkhUbkpOVldNOQ==",
         "Content-Type": "application/json"
     }
-    
+
     # Read the PDF file and convert it to Base64
     try:
         with open(pdf_path, "rb") as pdf_file:
@@ -1717,16 +1720,16 @@ def rest_bse_image_upload(client_code: str):
         raise Exception(f"Error reading PDF file: {str(e)}")
     
     payload = {
-        "UserID": os.environ.get("USER_ID"),
-        "Password": os.environ.get("USER_PASSWORD"),
-        "MemberCode": os.environ.get("USER_MEMBER_ID"),
+        "UserID": BSE_USER_ID,
+        "Password": BSE_PASSWORD,
+        "MemberCode": BSE_MEMBER_ID,
         "ClientCode": client_code,
         "ImageName": image_name,
         "Base64String": base64_string,
         "Filler1": "",
         "Filler2": ""
     }
-    print(payload)
+
     try:
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()  # Raises an HTTPError for bad responses
@@ -1827,3 +1830,114 @@ def rest_single_payment_gateway(
         return response.json()
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error making API request: {str(e)}")
+    
+
+def soap_starmf_file_upload_get_password():
+    client, history = create_zeep_client(
+        wsdl_url=f"{BSE_URL}StarMFFileUploadService/StarMFFileUploadService.svc?singleWsdl",
+        secure_url=f"{BSE_URL}StarMFFileUploadService/StarMFFileUploadService.svc/Secure"
+    )
+
+    header_value = create_zeep_headers(
+        action_url=f"{BSE_URL}IStarMFFileUploadService/GetPassword",
+        secure_url=f"{BSE_URL}StarMFFileUploadService/StarMFFileUploadService.svc/Secure"
+    )
+
+    payload = {
+        "Param": {
+            "UserId": os.environ.get("USER_ID"),
+            "MemberId": os.environ.get("USER_MEMBER_ID"), 
+            "Password": os.environ.get("USER_PASSWORD")
+        }
+    }
+
+    response = client.service.GetPassword(_soapheaders=[header_value], **payload)
+    
+    # Print request/response XML for debugging if needed
+    if history.last_sent:
+        raw_xml = history.last_sent["envelope"]
+        print("Request XML (Formatted):")
+        print(etree.tostring(raw_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
+
+    if history.last_received:
+        raw_response_xml = history.last_received["envelope"]
+        print("Response XML (Formatted):")
+        print(etree.tostring(raw_response_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
+
+    print(response)
+    return response["ResponseString"]
+
+def soap_upload_file(
+    client_code: str,
+    flag: str = "UCC"
+):
+    """
+    Upload a file using BSE's SOAP API
+    
+    Args:
+        client_code (str): BSE client code
+        document_type (str): Type of document being uploaded
+        file_path (str): Path to the file to be uploaded
+        flag (str, optional): Upload flag. Defaults to "01"
+    
+    Returns:
+        response: SOAP response from the server
+    """
+    client, history = create_zeep_client(
+        wsdl_url=f"{BSE_URL}StarMFFileUploadService/StarMFFileUploadService.svc?singleWsdl",
+        secure_url=f"{BSE_URL}StarMFFileUploadService/StarMFFileUploadService.svc/Secure"
+    )
+
+    # Get encrypted password first
+    encrypted_password = soap_starmf_file_upload_get_password()
+
+    header_value = create_zeep_headers(
+        action_url=f"{BSE_URL}IStarMFFileUploadService/UploadFile",
+        secure_url=f"{BSE_URL}StarMFFileUploadService/StarMFFileUploadService.svc/Secure"
+    )
+
+    file_name = os.environ.get("USER_MEMBER_ID") + client_code + ".pdf"
+    file_path = "user_cheque_images/" + file_name
+
+    # Read the file bytes
+    try:
+        with open(file_path, "rb") as file:
+            # Convert to base64 if requested
+            file_bytes = base64.b64encode(file.read()).decode('utf-8')
+    except FileNotFoundError:
+        raise Exception(f"File not found at {file_path}")
+    except Exception as e:
+        raise Exception(f"Error reading file: {str(e)}")
+
+    # Get filename from path
+    file_name = os.path.basename(file_path)
+
+    payload = {
+        "data": {
+            "ClientCode": client_code,
+            "DocumentType": "NRM",
+            "EncryptedPassword": encrypted_password,
+            "FileName": file_name,
+            "Filler1": "",
+            "Filler2": "",
+            "Flag": flag,
+            "MemberCode": os.environ.get("USER_MEMBER_ID"),
+            "UserId": os.environ.get("USER_ID"),
+            "pFileBytes": file_bytes
+        }
+    }
+
+    response = client.service.UploadFile(_soapheaders=[header_value], **payload)
+    
+    # Print request/response XML for debugging if needed
+    if history.last_sent:
+        raw_xml = history.last_sent["envelope"]
+        print("Request XML (Formatted):")
+        print(etree.tostring(raw_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
+
+    if history.last_received:
+        raw_response_xml = history.last_received["envelope"]
+        print("Response XML (Formatted):")
+        print(etree.tostring(raw_response_xml, pretty_print=True, encoding='utf-8').decode('utf-8'))
+
+    return response

@@ -1,11 +1,7 @@
 ## BSE XSIP Order Entry
 
----
-
 ### Function
 `soap_bse_xsip_order_entry`
-
----
 
 ### Arguments
 - `client_code` (str)
@@ -20,7 +16,6 @@
 - `xsip_regn_id` (str, optional) Default: ""
 - `frequency_type` (str, optional) Default: "MONTHLY"
 - `no_of_installments` (str, optional) Default: "" # Mandatory for DAILY XSIP
----
 
 ### Response
 

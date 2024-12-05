@@ -1248,7 +1248,7 @@ def soap_get_password_for_child_orders(client):
     return response_obj["ResponseString"]
 
 
-def soap_get_child_order_details(client_code: str, regn_no: str):
+def soap_get_child_order_details(client_code: str, regn_no: str, date: str):
     # Giving date is compulsory!
 
     secure_url = "https://bsestarmf.in/StarMFWebService/StarMFWebService.svc/Secure"

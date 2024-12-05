@@ -19,7 +19,7 @@
 - `unique_ref_no` (str, optional) Default: ""
 - `xsip_regn_id` (str, optional) Default: ""
 - `frequency_type` (str, optional) Default: "MONTHLY"
-- `no_of_installments` (str, optional) Default: ""
+- `no_of_installments` (str, optional) Default: "" # Mandatory for DAILY XSIP
 ---
 
 ### Response

@@ -68,5 +68,14 @@ NEW|4386573726|59729|8428|5972901|0|FAILED: NO OF INSTALLMENT NOT ALLOWED IN DAI
   "IntRefNo": ""
 }
 ```
+**Reason**: Trying to cancel too soon.
+```json
+{
+  "XSIPRegId": "120210124",
+  "BSERemarks": "X-SIP OR I-SIP CAN BE CANCELLED ONLY PRIOR TO 2 WORKING DAYS OF TRIGGER DATE",
+  "SuccessFlag": "1",
+  "IntRefNo": ""
+}
+```
 
 ---

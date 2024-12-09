@@ -1153,15 +1153,16 @@ def soap_bse_redemption_statement(
 def soap_bse_xsip_order_entry(
     client_code: str,
     scheme_code: str,
-    start_date: str,
-    end_date: str,
     mandate_id: str,
     amount: str,
+    start_date: str,
+    end_date: str = "",
     first_order_today: str = "Y",
     transaction_type: str = "NEW",
     unique_ref_no: str = "",
     xsip_regn_id: str = "",
-    frequency_type: str = "MONTHLY"
+    frequency_type: str = "MONTHLY",
+    no_of_installments: str = ""
 ):
     # can do this via REST as well!!!
     client, _ = create_zeep_client(
@@ -1193,7 +1194,7 @@ def soap_bse_xsip_order_entry(
         "FrequencyType": frequency_type,
         "FrequencyAllowed": "1",
         "InstallmentAmount": amount,
-        "NoOfInstallment": "20", # TODO
+        "NoOfInstallment": no_of_installments,
         "Remarks": "",
         "FolioNo": "",
         "FirstOrderFlag": first_order_today,
@@ -1209,7 +1210,7 @@ def soap_bse_xsip_order_entry(
         "PassKey": os.environ.get("USER_PASSKEY"),
         "Param1": "",
         "Param2": "",
-        "Param3": "",
+        "Param3": end_date,
         "Filler1": "",
         "Filler2": "",
         "Filler3": "",
